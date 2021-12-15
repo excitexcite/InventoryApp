@@ -29,28 +29,6 @@ class ItemDetailFragment : Fragment() {
     }
 
     /**
-     * Displays an alert dialog to get the user's confirmation before deleting the item.
-     */
-    private fun showConfirmationDialog() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(getString(android.R.string.dialog_alert_title))
-            .setMessage(getString(R.string.delete_question))
-            .setCancelable(false)
-            .setNegativeButton(getString(R.string.no)) { _, _ -> }
-            .setPositiveButton(getString(R.string.yes)) { _, _ ->
-                deleteItem()
-            }
-            .show()
-    }
-
-    /**
-     * Deletes the current item and navigates to the list fragment.
-     */
-    private fun deleteItem() {
-        findNavController().navigateUp()
-    }
-
-    /**
      * Called when fragment is destroyed.
      */
     override fun onDestroyView() {
