@@ -15,32 +15,25 @@ class InventoryViewModel(private val itemDao: ItemDao) : ViewModel() {
     val allItems: LiveData<List<Item>> = itemDao.getItems().asLiveData()
 
     /**
-     * Returns true if the EditTexts are not empty
+     * Returns true if stock is available to sell, false otherwise.
      */
-    fun isEntryValid(itemName: String, itemPrice: String, itemCount: String): Boolean {
-        if (itemName.isBlank() || itemPrice.isBlank() || itemCount.isBlank()) {
-            return false
-        }
-        return true
+    fun isStockAvailable(item: Item): Boolean {
+        return (item.quantityInStock > 0)
     }
 
     /**
-     * Retrieve an item from the repository.
+     * Updates an existing Item in the database.
      */
-    fun retrieveItem(id: Int): LiveData<Item> {
-        return itemDao.getItem(id).asLiveData()
+    fun updateItem(
+        itemId: Int,
+        itemName: String,
+        itemPrice: String,
+        itemCount: String
+    ) {
+        val updatedItem = getUpdatedItemEntry(itemId, itemName, itemPrice, itemCount)
+        updateItem(updatedItem)
     }
 
-    /**
-     * Decreases the stock by one unit and updates the database.
-     */
-    fun sellItem(item: Item) {
-        if (item.quantityInStock > 0) {
-            // Decrease the quantity by 1
-            val newItem = item.copy(quantityInStock = item.quantityInStock - 1)
-            updateItem(newItem)
-        }
-    }
 
     /**
      * Launching a new coroutine to update an item in a non-blocking way
@@ -52,18 +45,13 @@ class InventoryViewModel(private val itemDao: ItemDao) : ViewModel() {
     }
 
     /**
-     * Returns true if stock is available to sell, false otherwise.
+     * Decreases the stock by one unit and updates the database.
      */
-    fun isStockAvailable(item: Item): Boolean {
-        return (item.quantityInStock > 0)
-    }
-
-    /**
-     * Launching a new coroutine to delete an item in a non-blocking way
-     */
-    fun deleteItem(item: Item) {
-        viewModelScope.launch {
-            itemDao.delete(item)
+    fun sellItem(item: Item) {
+        if (item.quantityInStock > 0) {
+            // Decrease the quantity by 1
+            val newItem = item.copy(quantityInStock = item.quantityInStock - 1)
+            updateItem(newItem)
         }
     }
 
@@ -85,17 +73,37 @@ class InventoryViewModel(private val itemDao: ItemDao) : ViewModel() {
     }
 
     /**
-     * Called to update an existing entry in the Inventory database.
-     * Returns an instance of the [Item] entity class with the item info updated by the user.
+     * Launching a new coroutine to delete an item in a non-blocking way
      */
-    private fun getUpdatedItemEntry(
-        itemId: Int,
-        itemName: String,
-        itemPrice: String,
-        itemCount: String,
-    ): Item {
+    fun deleteItem(item: Item) {
+        viewModelScope.launch {
+            itemDao.delete(item)
+        }
+    }
+
+    /**
+     * Retrieve an item from the repository.
+     */
+    fun retrieveItem(id: Int): LiveData<Item> {
+        return itemDao.getItem(id).asLiveData()
+    }
+
+    /**
+     * Returns true if the EditTexts are not empty
+     */
+    fun isEntryValid(itemName: String, itemPrice: String, itemCount: String): Boolean {
+        if (itemName.isBlank() || itemPrice.isBlank() || itemCount.isBlank()) {
+            return false
+        }
+        return true
+    }
+
+    /**
+     * Returns an instance of the [Item] entity class with the item info entered by the user.
+     * This will be used to add a new entry to the Inventory database.
+     */
+    private fun getNewItemEntry(itemName: String, itemPrice: String, itemCount: String): Item {
         return Item(
-            id = itemId,
             itemName = itemName,
             itemPrice = itemPrice.toDouble(),
             quantityInStock = itemCount.toInt()
@@ -103,22 +111,17 @@ class InventoryViewModel(private val itemDao: ItemDao) : ViewModel() {
     }
 
     /**
-     * Updates an existing Item in the database.
+     * Called to update an existing entry in the Inventory database.
+     * Returns an instance of the [Item] entity class with the item info updated by the user.
      */
-    fun updateItem(itemId: Int,
-                   itemName: String,
-                   itemPrice: String,
-                   itemCount: String, ) {
-        val updatedItem = getUpdatedItemEntry(itemId, itemName, itemPrice, itemCount)
-        updateItem(updatedItem)
-    }
-
-    /**
-     * Returns an instance of the [Item] entity class with the item info entered by the user.
-     * This will be used to add a new entry to the Inventory database.
-     */
-    private fun getNewItemEntry(itemName: String, itemPrice: String, itemCount: String,) : Item {
+    private fun getUpdatedItemEntry(
+        itemId: Int,
+        itemName: String,
+        itemPrice: String,
+        itemCount: String
+    ): Item {
         return Item(
+            id = itemId,
             itemName = itemName,
             itemPrice = itemPrice.toDouble(),
             quantityInStock = itemCount.toInt()
@@ -130,11 +133,11 @@ class InventoryViewModel(private val itemDao: ItemDao) : ViewModel() {
  * Factory class to instantiate the [ViewModel] instance.
  */
 class InventoryViewModelFactory(private val itemDao: ItemDao) : ViewModelProvider.Factory {
-    override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(InventoryViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return InventoryViewModel(itemDao) as T
         }
-        throw IllegalAccessException("Unknown ViewModel class")
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

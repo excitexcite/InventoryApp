@@ -7,8 +7,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.excite.inventoryapp.data.Item
 import com.excite.inventoryapp.data.getFormattedPrice
-import com.excite.inventoryapp.databinding.FragmentItemDetailBinding
-import com.excite.inventoryapp.databinding.ItemListFragmentBinding
+import com.excite.inventoryapp.databinding.ItemListItemBinding
 
 /**
  * [ListAdapter] implementation for the recyclerview.
@@ -17,19 +16,13 @@ import com.excite.inventoryapp.databinding.ItemListFragmentBinding
 class ItemListAdapter(private val onItemClicked: (Item) -> Unit) :
     ListAdapter<Item, ItemListAdapter.ItemViewHolder>(DiffCallback) {
 
-        class ItemViewHolder(private var binding: ItemListFragmentBinding):
-            RecyclerView.ViewHolder(binding.root) {
-
-                fun bind(item: Item) {
-                    binding.itemName.text = item.itemName
-                    binding.itemPrice.text = item.getFormattedPrice()
-                    binding.itemQuantity.text = item.quantityInStock.toString()
-                }
-        }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
         return ItemViewHolder(
-            ItemListFragmentBinding.inflate(LayoutInflater.from(parent.context))
+            ItemListItemBinding.inflate(
+                LayoutInflater.from(
+                    parent.context
+                )
+            )
         )
     }
 
@@ -41,16 +34,25 @@ class ItemListAdapter(private val onItemClicked: (Item) -> Unit) :
         holder.bind(current)
     }
 
+    class ItemViewHolder(private var binding: ItemListItemBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(item: Item) {
+            binding.itemName.text = item.itemName
+            binding.itemPrice.text = item.getFormattedPrice()
+            binding.itemQuantity.text = item.quantityInStock.toString()
+        }
+    }
+
     companion object {
         private val DiffCallback = object : DiffUtil.ItemCallback<Item>() {
             override fun areItemsTheSame(oldItem: Item, newItem: Item): Boolean {
-                return oldItem == newItem
+                return oldItem === newItem
             }
 
             override fun areContentsTheSame(oldItem: Item, newItem: Item): Boolean {
                 return oldItem.itemName == newItem.itemName
             }
-
         }
     }
 }
